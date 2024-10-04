@@ -5,14 +5,17 @@ import path from 'path';
 import { engine } from 'express-handlebars';
 import { fileURLToPath } from 'url';
 import mongoose from 'mongoose';
-import passport from 'passport'; 
+import passport from 'passport';
 import cookieParser from 'cookie-parser';
+import dotenv from 'dotenv';
 import { passportConfig } from './config/passport.js';
-import createProductsRouter from './routes/products.router.js';
-import cartsRouter from './routes/cart.router.js';
+
+// Importar rutas
+import productRouter from './routes/product.router.js';
+import cartRouter from './routes/cart.router.js';
 import authRouter from './routes/auth.router.js';
 import viewsRouter from './routes/views.router.js';
-import dotenv from 'dotenv';
+
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -43,30 +46,35 @@ app.engine('handlebars', engine({
 app.set('view engine', 'handlebars');
 app.set('views', path.join(__dirname, 'views'));
 
+// Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-passportConfig(passport); 
+// Inicialización de Passport
+passportConfig(passport);
 app.use(passport.initialize());
 
+// Servir archivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Rutas
-app.use('/api/products', createProductsRouter(io));
-app.use('/api/carts', cartsRouter);
+app.use('/api/products', productRouter);
+app.use('/api/carts', cartRouter);
 app.use('/api/auth', authRouter);
 app.use('/', viewsRouter);
 
-server.listen(port, () => {
-  console.log(`Server is listening on port ${port}`);
-});
-
+// Configuración de WebSocket con Socket.io
 io.on('connection', (socket) => {
   console.log('A user connected');
   socket.on('disconnect', () => {
     console.log('User disconnected');
   });
+});
+
+// Iniciar el servidor
+server.listen(port, () => {
+  console.log(`Server is listening on port ${port}`);
 });
 
 export { app, io };
